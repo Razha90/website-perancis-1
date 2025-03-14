@@ -11,6 +11,7 @@ use App\Livewire\ClassroomLearn;
 use App\Livewire\Contoh;
 use App\Livewire\Dashboard;
 use App\Livewire\Welcome;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 Route::get('lang', [LanguageController::class, 'change'])->name('change.lang');
@@ -21,6 +22,7 @@ Route::get('lang', [LanguageController::class, 'change'])->name('change.lang');
 
 Route::get('/', action: Welcome::class)->name('welcome');
 Route::get('/contoh', action: Contoh::class);
+Route::get('/test', Classroom::class);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
@@ -28,12 +30,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // return view('dashboard');
     })->name('dashboard');
     Route::get('/app', action: Dashboard::class)->name('app');
+
     Route::get('/chat', Chat::class)->name('chat');
     Route::get('/classroom', Classroom::class)->name('classroom');
+
     Route::get('/add-class', AddClass::class)->name('add-class');
     Route::get('/classroom/{id}', ClassroomLearn::class)->name('classroom-learn');
     Route::middleware([EnsureClassOwner::class])->group(function () {
         Route::get('/classroom/{id}/add/{task}', AddTask::class)->name('task-add');
+        Route::get('/test/{id}/add/{task}', AddTask::class)->name('sasasa');
     });
 });
 

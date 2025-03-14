@@ -1,5 +1,5 @@
 <div>
-    @vite(['resources/js/quil.js'])
+    @vite(['resources/js/editor.js'])
     @if (session()->has(key: 'FAILED'))
         <div x-data="{ alert: true }" x-init="setTimeout(() => alert = false, 5000)" x-show="alert" x-transition
             class="flex items-start z-40 left-5 bottom-5 flex-row p-4 mb-4 text-sm rounded-lg bg-gray-800 animate-fade-up text-red-400 fixed"
@@ -54,15 +54,18 @@
                 <div class="w-full flex justify-end">
                     <button x-bind:disabled="saveNew" @click="clickSave"
                         :class="{
-                            'opacity-50 cursor-not-allowed border-gray-400 bg-gray-300 text-gray-500': (saveNew || !saved),
-                            'border-white outline outline-secondary_blue bg-secondary_blue text-white': !(saveNew || !saved)
+                            'opacity-50 cursor-not-allowed border-gray-400 bg-gray-300 text-gray-500': (saveNew || !
+                                saved),
+                            'border-white outline outline-secondary_blue bg-secondary_blue text-white': !(saveNew || !
+                                saved)
                         }"
                         class="border px-4 py-1 text-xl transition-all"
                         x-text="saved ? '{{ __('add-task.saved') }}' : '{{ __('add-task.saving') }}....' ">
                     </button>
                 </div>
                 <h2 class="text-lg font-bold mb-2">Pilih Tipe Konten</h2>
-                <select x-model="type" class="w-full p-2 border rounded" x-init="initType" x-on:input="saveNew =false">
+                <select x-model="type" class="w-full p-2 border rounded" x-init="initType"
+                    x-on:input="saveNew =false">
                     <option value="task">{{ __('add-class.task') }}</option>
                     <option value="notification">{{ __('add-class.notification') }}</option>
                 </select>
@@ -93,56 +96,9 @@
             <div x-show="isLoading && content.length > 0"
                 class="w-full h-auto px-4 pt-3 pb-3 bg-primary_white rounded-xl mt-5">
                 <h2 class="text-2xl font-bold my-2">{{ __('add-class.content') }}</h2>
-                <div id="toolbar-container" class="w-full" wire:ignore>
-                    <span class="ql-formats">
-                        <select class="ql-size"></select>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-bold"></button>
-                        <button class="ql-italic"></button>
-                        <button class="ql-underline"></button>
-                        <button class="ql-strike"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <select class="ql-color"></select>
-                        <select class="ql-background"></select>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-script" value="sub"></button>
-                        <button class="ql-script" value="super"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-clean"></button>
-                        <button class="ql-header" value="1"></button>
-                        <button class="ql-header" value="2"></button>
-                        <button class="ql-blockquote"></button>
-                        <button class="ql-code-block"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-list" value="ordered"></button>
-                        <button class="ql-list" value="bullet"></button>
-                        <button class="ql-indent" value="-1"></button>
-                        <button class="ql-indent" value="+1"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-direction" value="rtl"></button>
-                        <select class="ql-align"></select>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-link"></button>
-                        <button class="ql-image"></button>
-                        <button class="ql-video"></button>
-                        <button class="ql-formula"></button>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-clean"></button>
-                    </span>
-                </div>
-                <div wire:ignore id="editor" class="w-full min-h-[200px] bg-primary_white">
-                </div>
+                <div id="editorjs"></div>
             </div>
-            <div x-show="(type == 'task') && isLoading && content.length > 0"
-                class="w-full p-3 bg-primary_white mt-4">
+            <div x-show="(type == 'task') && isLoading && content.length > 0" class="w-full p-3 bg-primary_white mt-4">
                 <div
                     class="rounded-xl border border-dashed border-secondary_blue w-full flex flex-row items-center p-3">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-[40px]">
@@ -180,7 +136,7 @@
         </div>
 
     </main>
-    <script></script>
+    <script src="https://cdn.jsdelivr.net/npm/editorjs-style@latest"></script>
     <script>
         function cmsContent() {
             return {
@@ -196,70 +152,156 @@
                     if (this.selectionPos) return;
                     this.selectionPos = true;
 
-                    const quil = new Quill('#editor', {
-                        modules: {
-                            syntax: true,
-                            toolbar: '#toolbar-container',
-                            syntax: {
-                                hljs
-                            },
-                            resize: {}
-                        },
-                        placeholder: "{{ __('add-task.write_content') }}",
-                        theme: 'snow',
-                    });
+                    let token = "{{ session('sanctum_token') }}";
                     let stateAwal = false
-                    quil.on('text-change', () => {
-                        this.data = quil.root.innerHTML;
-                        if (stateAwal) {
-                            this.saveNew = false;
-                        } else {
-                            stateAwal = true;
+
+                    const editor = new EditorJS({
+                        holder: "editorjs",
+                        tools: {
+
+                            paragraph: {
+                                class: Paragraph,
+                                config: {
+                                    inlineToolbar: true,
+                                }
+                            },
+                            header: Header,
+                            list: List,
+                            image: {
+                                class: ImageTool,
+                                config: {
+                                    types: "image/*",
+                                    additionalRequestHeaders: {
+                                        "Authorization": `Bearer ${token}`,
+                                        "Content-Type": "application/json"
+                                    },
+                                    captionPlaceholder: "Tambahkan deskripsi gambar",
+                                    buttonContent: "Pilih Gambar",
+                                    features: {
+                                        border: true,
+                                        background: true,
+                                        stretched: true,
+                                        caption: 'optional',
+                                    },
+                                    uploader: {
+                                        async uploadByFile(file) {
+                                            const formData = new FormData();
+                                            formData.append('image', file);
+                                            const response = await fetch('{{ route('upload-image') }}', {
+                                                method: 'POST',
+                                                body: formData,
+                                                headers: {
+                                                    "Authorization": `Bearer ${token}`
+                                                },
+                                            });
+
+                                            return response.json();
+                                        }
+
+                                    }
+
+                                },
+                            },
+                            raw: RawTool,
+                            code: CodeTool,
+                            linkTool: {
+                                class: LinkTool,
+                                config: {
+                                    endpoint: '{{ route('info') }}',
+                                    headers: {
+                                        "Authorization": `Bearer ${token}`,
+                                        "Content-Type": "application/json"
+                                    }
+                                }
+                            },
+                            embed: {
+                                class: Embed,
+                                config: {
+                                    services: {
+                                        youtube: true,
+                                        facebook: true,
+                                        instagram: true,
+                                        twitter: true,
+                                        twitch: true,
+                                        "twitch-channel": true,
+                                        miro: true,
+                                        vimeo: true,
+                                        gfycat: true,
+                                        imgur: true,
+                                        vine: true,
+                                        aparat: true,
+                                        "yandex-music-track": true,
+                                        "yandex-music-album": true,
+                                        "yandex-music-playlist": true,
+                                        coub: true,
+                                        codepen: true,
+                                        pinterest: true,
+                                        github: true
+                                    }
+                                }
+                            },
+                            attaches: {
+                                class: AttachesTool,
+                                config: {
+                                    uploader: {
+                                        async uploadByFile(file) {
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+                                            const response = await fetch('{{ route('upload-file') }}', {
+                                                method: 'POST',
+                                                body: formData,
+                                                headers: {
+                                                    "Authorization": `Bearer ${token}`
+                                                },
+                                            });
+                                            return response.json();
+                                        },
+                                    }
+                                }
+                            },
+                            table: {
+                                class: Table,
+                                inlineToolbar: true,
+                                config: {
+                                    rows: 2,
+                                    cols: 3,
+                                    maxRows: 5,
+                                    maxCols: 5,
+                                },
+                            },
+                            quote: Quote,
+                            underline: Underline,
+                            delimiter: Delimiter,
+                            inlineCode: {
+                                class: InlineCode,
+                                shortcut: 'CMD+SHIFT+M',
+                            },
+                            textVariant: TextVariantTune,
+                            Marker: {
+                                class: Marker,
+                                shortcut: 'CMD+SHIFT+M',
+                            }
+                        },
+                        tunes: ['textVariant'],
+                        onChange: async () => {
+                            this.data = await editor.save();
+                            if (stateAwal) {
+                                this.saveNew = false;
+                            } else {
+                                stateAwal = true;
+                            }
                         }
                     });
 
 
-                    quil.getModule('toolbar').addHandler('image', () => {
-                        const input = document.createElement('input');
-                        input.setAttribute('type', 'file');
-                        input.setAttribute('accept', 'image/*');
-                        input.click();
-                        input.onchange = async () => {
-                            const file = input.files[0];
-                            if (!file) return;
-
-                            const formData = new FormData();
-                            formData.append('image', file);
-                            let token = "{{ session('sanctum_token') }}";
-
-                            let res = await fetch("/api/upload-image", {
-                                method: "POST",
-                                headers: {
-                                    "Authorization": `Bearer ${token}`
-                                },
-                                body: formData
-                            });
-                            if (res.ok) {
-                                const data = await res.json();
-                                let position = quil.getSelection();
-                                quil.insertEmbed(position.index, 'image', data.url);
-                                quill.setSelection(position.index + 1);
-
-                            } else {
-                                console.error("Upload gagal!", await res.text());
-                            }
-                        };
-                    });
-
-                    quil.root.innerHTML = this.content[0].content;
-                    document.addEventListener('keydown', (event) => {
+                    document.addEventListener('keydown', async (event) =>  {
                         if (event.ctrlKey && (event.key === 's' || event.key === 'S')) {
                             event.preventDefault();
                             this.saved = false;
-
+                            const content = await editor.save();
                             const data = {
                                 title: this.title,
-                                content: quil.root.innerHTML,
+                                content: content,
                                 type: this.type,
                             };
 
@@ -269,6 +311,7 @@
 
                         }
                     });
+
 
                     Livewire.on('savedSuccess', (event) => {
                         this.saved = true;

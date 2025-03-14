@@ -6,6 +6,7 @@ use App\Models\Classroom;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureClassOwner
@@ -19,7 +20,7 @@ class EnsureClassOwner
     {
         $classId = $request->route('id'); // Ambil ID dari route
         $classroom = Classroom::find($classId);
-
+        Log::info($classroom->user_id . ' ' . Auth::id());
         // Periksa apakah kelas ditemukan dan apakah pemiliknya adalah user yang login
         if (!$classroom || $classroom->user_id !== Auth::id()) {
             abort(403, 'Anda tidak memiliki izin untuk mengakses kelas ini.');

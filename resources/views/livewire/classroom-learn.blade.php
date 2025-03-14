@@ -192,7 +192,7 @@
 
                     <!-- Wrapper Profile Class -->
                     <div x-bind:style="'background-image: url(' + previewImage + '); background-position: center ' + positionImage + ';'"
-                        class="bg-no-repeat w-full bg-cover bg-center p-3 rounded-xl relative before:absolute before:inset-0 before:bg-black before:opacity-15 before:rounded-xl min-h-[200px] max-h-[400px] flex flex-col items-end justify-end hover:before:opacity-35 hover:before:transition-opacity"
+                        class="bg-no-repeat w-full bg-cover bg-center p-3 rounded-xl relative before:absolute before:inset-0 before:bg-black before:opacity-15 before:rounded-xl min-h-[300px] max-h-[400px] flex flex-col items-end justify-end hover:before:opacity-35 hover:before:transition-opacity "
                         x-ref="imageContainer">
 
                         <!-- Title -->
